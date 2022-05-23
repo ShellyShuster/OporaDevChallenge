@@ -1,18 +1,52 @@
-// import express, { Express, Request, Response } from 'express';
-// import dotenv from 'dotenv';
+// import express from 'express';
+// import * as bodyParser from 'body-parser';
 
-// dotenv.config();
+// class App {
 
-// const app: Express = express();
-// const port = process.env.PORT;
+//     public express: express.Application;
+
+//     constructor() {
+//         this.express = express();
+//         this.middleware();
+//         this.routes();
+//     }
+
+//     // Configure Express middleware.
+//     private middleware(): void {
+//         this.express.use(bodyParser.json());
+//         this.express.use(bodyParser.urlencoded({ extended: false }));
+//     }
+
+//     private routes(): void {
+
+//         this.express.use('/', (req,res,next) => {
+//             res.send("Typescript App works!!!");
+//         });
+//     }
+// }
+
+// export default new App().express;
 
 
-// console.log({port});
+// import server from './server';
 
-// app.get('/', (req: Request, res: Response) => {
-//   res.send('Express + TypeScript Server is now running');
-// });
+// const port = parseInt(process.env.PORT || '4000');
+
+// const starter = new server().start(port)
+//   .then(port => console.log(`Running on port ${port}`))
+//   .catch(error => {
+//     console.log(error)
+//   });
+
+// export default starter;
+
+import app from './Server';
+
+// // Start the server
+// const port = Number(process.env.PORT || 8080);
 
 // app.listen(port, () => {
-//   console.log(`⚡️[server]: Server is running at https://localhost:${port}`);
+// 	// logger.info('Express server started on port: ' + port);
+//     console.log('Express server started on port: ' + port);
 // });
+
