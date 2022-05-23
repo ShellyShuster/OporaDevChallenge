@@ -1,6 +1,10 @@
 
 import { Pool } from 'pg';
+import * as path from 'path';
+// import x from '../../../csv'
 
+const TABLE_NAMES = ['status', 'seasons', 'circuits', 'constructors', 'drivers', 'races', 'constructor_results', 'constructor_standings', 'driver_standings', 'lap_times', 'pit_stops', 'qualifying', 'results'];
+// const TABLE_NAMES = ['status', 'seasons', 'circuits', 'constructors'];
 const pool = new Pool({
     max: 20,
     connectionString: 'postgres://postgres:123456@localhost:5432/Drivers',
@@ -9,18 +13,21 @@ const pool = new Pool({
 
 export default pool;
 
+/**
+ * This function executes sql statements that create the different requested tables.
+ */
 export async function createTables() {
     try {
-        await pool.query(`CREATE TABLE status (
+        await pool.query(`CREATE TABLE ${TABLE_NAMES[0]} (
             statusId INTEGER NOT NULL,
             status TEXT,
             PRIMARY KEY (statusId)
         );
-        CREATE TABLE seasons(
+        CREATE TABLE ${TABLE_NAMES[1]}(
             year INTEGER NOT NULL,
             url TEXT
         ); 
-        CREATE TABLE circuits(
+        CREATE TABLE ${TABLE_NAMES[2]}(
             circuitId INTEGER NOT NULL,   
             circuitRef TEXT,
             name TEXT,
@@ -32,29 +39,29 @@ export async function createTables() {
             url TEXT,
             PRIMARY KEY(circuitId)
         );
-        CREATE TABLE constructors(
+        CREATE TABLE ${TABLE_NAMES[3]}(
             constructorId INTEGER,
-            constructor TEXT,
+            constructorRef TEXT,
             name TEXT,
             nationality TEXT,
             url TEXT,
             PRIMARY KEY(constructorId)
         );
-        CREATE TABLE drivers(
+        CREATE TABLE ${TABLE_NAMES[4]}(
             driverId INTEGER,
             driverRef TEXT,
-            number INTEGER,
+            number VARCHAR(5),
             code VARCHAR(3),
             forename TEXT,
             surname TEXT,
-            dob TEXT,
+            dob DATE,
             nationality TEXT,
             url TEXT,
             PRIMARY KEY(driverId)
         ); `)
 
         await pool.query(`
-        CREATE TABLE races(
+        CREATE TABLE ${TABLE_NAMES[5]}(
             raceId INTEGER,
             year INTEGER,
             round INTEGER,
@@ -67,38 +74,34 @@ export async function createTables() {
             FOREIGN KEY(circuitId) REFERENCES circuits(circuitId)
         ); 
         `);
-        console.log("after creating races");
 
-        await pool.query(`CREATE TABLE constructor_results(
+        await pool.query(`CREATE TABLE ${TABLE_NAMES[6]}(
             constructorResultId INTEGER,
             raceId INTEGER,
             constructorId INTEGER,
-            points INTEGER,
-            status INTEGER,
+            points FLOAT,
+            status VARCHAR(5),
             PRIMARY KEY(constructorResultId),
             FOREIGN KEY(raceId) REFERENCES races(raceId),
-            FOREIGN KEY(constructorId) REFERENCES constructors(constructorId),
-            FOREIGN KEY(status) REFERENCES status(statusId)
-        ); 
-        CREATE TABLE constructor_standings(
+            FOREIGN KEY(constructorId) REFERENCES constructors(constructorId)); 
+
+        CREATE TABLE ${TABLE_NAMES[7]}(
             constructorStandingsId INTEGER,
             raceId INTEGER,
             constructorId INTEGER,
-            points INTEGER,
-            status INTEGER,
+            points FLOAT,
             position INTEGER,
             positionText VARCHAR(5),
             wins INTEGER,
             PRIMARY KEY(constructorStandingsId),
             FOREIGN KEY(raceId) REFERENCES races(raceId),
-            FOREIGN KEY(constructorId) REFERENCES constructors(constructorId),
-            FOREIGN KEY(status) REFERENCES status(statusId)
+            FOREIGN KEY(constructorId) REFERENCES constructors(constructorId)
         );
-        CREATE TABLE driver_standings(
+        CREATE TABLE ${TABLE_NAMES[8]}(
             driverStandingsId INTEGER,
             raceId INTEGER,
             driverId INTEGER,
-            points INTEGER,
+            points FLOAT,
             position INTEGER,
             positionText VARCHAR(5),
             wins INTEGER,
@@ -106,7 +109,7 @@ export async function createTables() {
             FOREIGN KEY(raceId) REFERENCES races(raceId),
             FOREIGN KEY(driverId) REFERENCES drivers(driverId)
         );
-        CREATE TABLE lap_times(
+        CREATE TABLE ${TABLE_NAMES[9]}(
             raceId INTEGER,
             driverId INTEGER,
             lap INTEGER,
@@ -116,18 +119,18 @@ export async function createTables() {
             FOREIGN KEY(raceId) REFERENCES races(raceId),
             FOREIGN KEY(driverId) REFERENCES drivers(driverId)
         );  
-        CREATE TABLE pit_stops(
+        CREATE TABLE ${TABLE_NAMES[10]}(
             raceId INTEGER,
             driverId INTEGER,
             stop INTEGER,
             lap INTEGER,
             time TEXT,
-            duration FLOAT,
+            duration TEXT,
             milliseconds INTEGER,
             FOREIGN KEY(raceId) REFERENCES races(raceId),
             FOREIGN KEY(driverId) REFERENCES drivers(driverId)
         ); 
-        CREATE TABLE qualifying(
+        CREATE TABLE ${TABLE_NAMES[11]}(
             qualifyId INTEGER,
             raceId INTEGER,
             driverId INTEGER,
@@ -142,24 +145,24 @@ export async function createTables() {
             FOREIGN KEY(driverId) REFERENCES drivers(driverId),
             FOREIGN KEY(constructorId) REFERENCES constructors(constructorId)
         ); 
-        CREATE TABLE results(
+        CREATE TABLE ${TABLE_NAMES[12]}(
             resultId INTEGER,
             raceId INTEGER,
             driverId INTEGER,
             constructorId INTEGER,
-            number INTEGER,
+            number TEXT,
             grid INTEGER,
-            position INTEGER,
+            position VARCHAR(5),
             positionText TEXT,
             positionOrder INTEGER,
-            points INTEGER,
+            points FLOAT,
             laps INTEGER,
             time TEXT,
-            milliseconds INTEGER,
-            fastestLap INTEGER,
-            rank INTEGER,
+            milliseconds TEXT,
+            fastestLap VARCHAR(5),
+            rank VARCHAR(3),
             fastestLapTime TEXT,
-            fastestLapSpeed float,
+            fastestLapSpeed TEXT,
             statusId INTEGER,
             PRIMARY KEY(resultId),
             FOREIGN KEY(raceId) REFERENCES races(raceId),
@@ -170,6 +173,44 @@ export async function createTables() {
     } catch (e: any) {
         console.log(e.toString());
     }
+}
+
+
+/**
+ * This function load all the information from the CSV files to the DB.
+ */
+export async function loadDataFromFiles() {
+    const basePath = 'C:\\shelly\\opora\\csv'
+    try {
+        let sqlStatement = ``;
+        TABLE_NAMES.map(table => {
+            const filePath = path.join(basePath, table) + '.csv';
+            console.log({ filePath });
+            sqlStatement += `COPY ${table}
+             FROM '${filePath}'
+             DELIMITER ','
+             CSV HEADER; `
+        })
+        await pool.query(sqlStatement);
+    } catch (e: any) {
+        console.log(e.toString());
+    }
+}
+
+/**
+ * The function fetches from the DB a list of drivers sorted by their id and their wins is a requested season.
+ * @param seasonYear The year of the requested season.
+ * @returns list of drivers sorted by their id and their wins is a requested season.
+ */
+export async function driversBySeason(seasonYear: number) {
+    const { rows } = await pool.query(`select DISTINCT drivers.*, driver_standings.wins, races.year
+    from driver_standings
+    JOIN races on driver_standings.raceId = races.raceId
+    join drivers on driver_standings.driverId = drivers.driverId
+    where year=${seasonYear}
+    order by drivers.driverid asc, driver_standings.wins asc`);
+    
+    return rows;
 }
 
 // export async function connectToDatabase(){

@@ -1,9 +1,10 @@
 import express, { Application, Router, Request, Response, NextFunction, RequestHandler } from 'express';
 import bodyParser from 'body-parser';
 import driversRouter from './routers/DriversRouter';
-import pool, { createTables } from './dbconfig/dbconnector';
+import pool, { createTables, loadDataFromFiles } from './dbconfig/dbconnector';
 import { Pool, PoolClient } from 'pg';
 import { StatusPostRouter } from './routers/status/post';
+import { getRouter } from './routers/get';
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.get("/", (req, res) => {
 
 
 app.use('/status', [StatusPostRouter]);
+app.use('/drivers', [getRouter]);
 
 // Start the server
 const port = Number(process.env.PORT || 9000);
@@ -36,13 +38,14 @@ const port = Number(process.env.PORT || 9000);
 app.listen(port, () => {
     const func = async () => {
         console.log('Express server started on port: ' + port);
-        const {rows} = await pool.query(`select count(*) from pg_catalog.pg_tables 
+        const { rows } = await pool.query(`select count(*) from pg_catalog.pg_tables 
         where schemaname != 'pg_catalog' and 
         schemaname != 'information_schema';`);
         const tablesNum = parseInt(rows[0].count);
-        console.log({tablesNum});
-        if(tablesNum === 0){
+        console.log({ tablesNum });
+        if (tablesNum === 0) {
             await createTables();
+            await loadDataFromFiles();
         } else {
             console.log("database was aready created :)");
         }
