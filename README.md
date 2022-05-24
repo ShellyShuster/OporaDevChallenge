@@ -134,5 +134,9 @@ In order to execute the project you will have to perfrom few steps:
         }
     ]}
     
+#### helpful sited to understand the queries:
+  * https://www.postgresqltutorial.com/postgresql-tutorial/import-csv-file-into-posgresql-table/
+  * https://sqlskull.com/2020/11/21/how-to-get-top-n-records-for-each-category/
+  
     
-  I really wanted to add authentication, DTO's, custom exceptions and different interfaces but I have very importent physics exam on wednesday and right after it we are going to a school trip so I didn't have enough time, I did my best, hope you like it.
+ I really wanted to add authentication, DTO's, custom exceptions and different interfaces but I have very importent physics exam on wednesday and right after it we are going to a school trip so I didn't have enough time, I did my best, hope you like it.
