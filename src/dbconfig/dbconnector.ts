@@ -1,10 +1,11 @@
 
 import { Pool } from 'pg';
 import * as path from 'path';
-// import x from '../../../csv'
 
+
+const BASE_PATH = 'C:\\shelly\\opora\\csv'
 const TABLE_NAMES = ['status', 'seasons', 'circuits', 'constructors', 'drivers', 'races', 'constructor_results', 'constructor_standings', 'driver_standings', 'lap_times', 'pit_stops', 'qualifying', 'results'];
-// const TABLE_NAMES = ['status', 'seasons', 'circuits', 'constructors'];
+
 const pool = new Pool({
     max: 20,
     connectionString: 'postgres://postgres:123456@localhost:5432/Drivers',
@@ -18,6 +19,9 @@ export default pool;
  */
 export async function createTables() {
     try {
+        /**
+         * create tables: status, seasons, circuits, constructors and drivers
+         */
         await pool.query(`CREATE TABLE ${TABLE_NAMES[0]} (
             statusId INTEGER NOT NULL,
             status TEXT,
@@ -61,6 +65,7 @@ export async function createTables() {
             PRIMARY KEY(driverId)
         );`)
 
+        //create races table
         await pool.query(`
         CREATE TABLE ${TABLE_NAMES[5]}(
             raceId INTEGER,
@@ -77,6 +82,7 @@ export async function createTables() {
         ); 
         `);
 
+        //Create tables: constructor_results, constructor_standings, driver_standings, lap_times, pit_stops, qualifying and results.
         await pool.query(`CREATE TABLE ${TABLE_NAMES[6]}(
             constructorResultId INTEGER,
             raceId INTEGER,
@@ -182,11 +188,10 @@ export async function createTables() {
  * This function load all the information from the CSV files to the DB.
  */
 export async function loadDataFromFiles() {
-    const basePath = 'C:\\shelly\\opora\\csv'
     try {
         let sqlStatement = ``;
         TABLE_NAMES.map(table => {
-            const filePath = path.join(basePath, table) + '.csv';
+            const filePath = path.join(BASE_PATH, table) + '.csv';
             sqlStatement += `COPY ${table}
              FROM '${filePath}'
              DELIMITER ','
