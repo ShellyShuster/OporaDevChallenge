@@ -1,11 +1,32 @@
-import { Router, Request, Response, NextFunction, request } from 'express';
-import { driversBySeason, topThreeInSeason } from '../../dbconfig/dbconnector';
+import { Router, Request, Response } from 'express';
+import { driverProfile, driversBySeason } from '../../dbconfig/dbconnector';
 
 
 const router = Router();
-// const driversController = new TodosController();
 
-// router.get('/', driversController.get);
+
+router.get('/profile', async (request: Request, res: Response) => {
+    const driverId: string = request.query.driverId as string;
+    const forename: string = request.query.forename as string;
+    const surname: string = request.query.surname as string;
+    try {
+        if(driverId){
+            const profile = await driverProfile('driverid', driverId);
+            res.send({success: true, profile});
+        } else if(forename){
+            const profile = await driverProfile('forename', forename, surname);
+            res.send({success: true, profile});
+        }
+        else {
+            res.send({error: "Invalid query params"});
+        }
+    
+    } catch (e: any) {
+        console.log(e.toString());
+        res.send({ error: e.toString() }); return;
+    }
+});
+
 
 
 router.get('/', async (request: Request, res: Response) => {
@@ -21,6 +42,7 @@ router.get('/', async (request: Request, res: Response) => {
         res.send({ error: e.toString() }); return;
     }
 });
+
 
 
 export { router as driversGetRouter };

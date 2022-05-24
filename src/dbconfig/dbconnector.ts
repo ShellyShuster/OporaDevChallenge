@@ -232,16 +232,39 @@ export async function topThreeInSeason() {
     return rows;
 }
 
-// export async function connectToDatabase(){
-//     // pool.connect(function (err, client, done) {
-//     //     if (err) throw new Error(err.toString());
-//     //     console.log('Connected');
-//     //   });
-//     await pool.connect();
-//     await pool.end();
-// };
+/**
+ * @param field Specifies the requested field to query the data by (driverId or surname)
+ * @param value The value of the specified field 
+ * @param surname needed only if the user chose to query the info by the drivers name, 
+ * @returns Driver's profile with all of hisr races sorted from the newest to the oldest. for each race the following columns: 
+ *          Average lap time, fastest lap time, sowest lap time, number of pit stops, fastest pit stop, slowest pit stop, circuit nane, points, position.
+ */
+export async function driverProfile(field: string, value: string, surname?: string) {
+    let sqlStatement = `select driver_standings.driverid, races.raceId, races.year, q.fastestLap, q.avgLapTime, q.slowestLapTime, q.pitStopsCount, q.fastestPitStop, q.slowestPitStop, circuits.name, driver_standings.points, driver_standings."position"
+    from drivers
+    join driver_standings on driver_standings.driverId = drivers.driverid
+    join races on races.raceid=driver_standings.raceid
+    join circuits on circuits.circuitid=races.circuitid
+    join (select lap_times.raceId, min(lap_times.milliseconds) as fastestLap, avg(milliseconds)::numeric(10,4) as avgLapTime, max(lap_times.milliseconds) as slowestLapTime,
+        pitStopsQuery.pitStopsCount, pitStopsQuery.fastestPitStop, pitStopsQuery.slowestPitStop
+          from lap_times
+          left join 
+          (select pit_stops.raceid as raceid, count(*) as pitStopsCount , 
+           min(milliseconds) as fastestPitStop, max(milliseconds) as slowestPitStop  
+           from pit_stops group by pit_stops.raceid) as pitStopsQuery
+          on pitStopsQuery.raceid=lap_times.raceid
+        group by lap_times.raceid, pitStopsQuery.pitStopsCount, pitStopsQuery.fastestPitStop, pitStopsQuery.slowestPitStop
+    ) q on q.raceid=races.raceid `
 
-// export async function getDatabase() {
-//     pool.connect();
-//     return pool;
-// }
+    if (field.toLocaleLowerCase() === 'driverid') {
+        sqlStatement += `where drivers.driverId =${value}`;
+    } else if (field.toLocaleLowerCase() === 'forename' && surname) {
+        sqlStatement += `where LOWER(drivers.forename) like '${value.toLocaleLowerCase()}' and LOWER(drivers.surname) like '${surname.toLocaleLowerCase()}'`;
+    } else {
+        throw ("Invalid Parameters"); return;
+    }
+    sqlStatement += `order by races.year desc;`;
+    const { rows } = await pool.query(sqlStatement)
+
+    return rows;
+}

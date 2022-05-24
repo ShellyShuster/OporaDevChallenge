@@ -11,7 +11,6 @@ const router = Router();
 
 
 router.post('/', async (request: Request, res: Response, next: NextFunction) => {
-    console.log("in post");
     try {
         pool.query(`CREATE TABLE status (
             statusId INTEGER,
