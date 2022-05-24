@@ -25,7 +25,8 @@ export async function createTables() {
         );
         CREATE TABLE ${TABLE_NAMES[1]}(
             year INTEGER NOT NULL,
-            url TEXT
+            url TEXT,
+            PRIMARY KEY (year)
         ); 
         CREATE TABLE ${TABLE_NAMES[2]}(
             circuitId INTEGER NOT NULL,   
@@ -46,7 +47,7 @@ export async function createTables() {
             nationality TEXT,
             url TEXT,
             PRIMARY KEY(constructorId)
-        );
+        ); 
         CREATE TABLE ${TABLE_NAMES[4]}(
             driverId INTEGER,
             driverRef TEXT,
@@ -58,7 +59,7 @@ export async function createTables() {
             nationality TEXT,
             url TEXT,
             PRIMARY KEY(driverId)
-        ); `)
+        );`)
 
         await pool.query(`
         CREATE TABLE ${TABLE_NAMES[5]}(
@@ -71,7 +72,8 @@ export async function createTables() {
             time TEXT,
             url TEXT,
             PRIMARY KEY(raceId),
-            FOREIGN KEY(circuitId) REFERENCES circuits(circuitId)
+            FOREIGN KEY(circuitId) REFERENCES circuits(circuitId),
+            FOREIGN KEY(year) REFERENCES seasons(year)
         ); 
         `);
 
@@ -185,7 +187,6 @@ export async function loadDataFromFiles() {
         let sqlStatement = ``;
         TABLE_NAMES.map(table => {
             const filePath = path.join(basePath, table) + '.csv';
-            console.log({ filePath });
             sqlStatement += `COPY ${table}
              FROM '${filePath}'
              DELIMITER ','
@@ -209,7 +210,25 @@ export async function driversBySeason(seasonYear: number) {
     join drivers on driver_standings.driverId = drivers.driverId
     where year=${seasonYear}
     order by drivers.driverid asc, driver_standings.wins asc`);
-    
+
+    return rows;
+}
+
+/**
+
+ * @returns List of seasons with the top 3 drivers in each season.
+ */
+export async function topThreeInSeason() {
+    const { rows } = await pool.query(`select year, driverId, wins
+    from (
+    select year, driverid, wins, indexInYear
+        from (select races.raceId, year, driverId, points, wins, ROW_NUMBER() OVER (PARTITION BY year Order by wins DESC) AS indexInYear
+                   from races 
+        join driver_standings on driver_standings.raceid=races.raceid 
+        order by year) as q1
+        ) as results
+        where indexInYear <= 3`);
+
     return rows;
 }
 

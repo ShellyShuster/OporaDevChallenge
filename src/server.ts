@@ -1,22 +1,13 @@
 import express, { Application, Router, Request, Response, NextFunction, RequestHandler } from 'express';
 import bodyParser from 'body-parser';
-import driversRouter from './routers/DriversRouter';
 import pool, { createTables, loadDataFromFiles } from './dbconfig/dbconnector';
-import { Pool, PoolClient } from 'pg';
 import { StatusPostRouter } from './routers/status/post';
-import { getRouter } from './routers/get';
+import { driversGetRouter } from './routers/./drivers/get';
+import { seasonsGetRouter } from './routers/seasons/get';
 
 const app = express();
 
-// const databaseConn = connectToDatabase();
 
-// declare global {
-//     namespace Express{
-//         export interface Request {
-//             pool: Pool;
-//         }
-//     }
-// }
 app.use(bodyParser.json({ limit: '2mb' }));
 
 // app.use((request: Request, res: Response, next: NextFunction) => {
@@ -30,7 +21,8 @@ app.get("/", (req, res) => {
 
 
 app.use('/status', [StatusPostRouter]);
-app.use('/drivers', [getRouter]);
+app.use('/drivers', [driversGetRouter]);
+app.use('/seasons', [seasonsGetRouter]);
 
 // Start the server
 const port = Number(process.env.PORT || 9000);
@@ -55,40 +47,3 @@ app.listen(port, () => {
 
 
 export default app;
-
-// class Server {
-//     private app;
-
-//     constructor() {
-//         this.app = express();
-//         this.config();
-//         this.routerConfig();
-//         // this.dbConnect();
-//     }
-
-//     private config() {
-//         this.app.use(bodyParser.urlencoded({ extended:true }));
-//         this.app.use(bodyParser.json({ limit: '1mb' })); // 100kb default
-//     }
-
-//     // private dbConnect() {
-//     //     pool.connect(function (err, client, done) {
-//     //         if (err) throw new Error(err.toString());
-//     //         console.log('Connected');
-//     //       });
-//     // }
-
-//     private routerConfig() {
-//         this.app.use('/drivers', todosRouter);
-//     }
-
-//     public start = (port: number) => {
-//         return new Promise((resolve, reject) => {
-//             this.app.listen(port, () => {
-//                 resolve(port);
-//             }).on('error', (err: Object) => reject(err));
-//         });
-//     }
-// }
-
-// export default Server;
